@@ -3,25 +3,11 @@
         {
             "name": "Linux",
             "includePath": [
-                "${workspaceFolder}/src/**",
-                "/data/wuhan/lean/openssl1.1.1j/include/**",
-                "/data/wuhan/lean/curl7.77.0-DEV/include/**"
+                "${workspaceFolder}/**"
             ],
             "defines": [],
-            "compilerPath": "/usr/bin/gcc", 
-            "cStandard": "gnu11",
-            "cppStandard": "gnu++11",
-            "intelliSenseMode": "linux-gcc-x64",
-            "configurationProvider": "ms-vscode.makefile-tools",
-            "browse": {
-                "path": [
-                    "${workspaceFolder}/src/**",
-                    "/data/wuhan/lean/openssl1.1.1j/include/**",
-                    "/data/wuhan/lean/curl7.77.0-DEV/include/**"
-                ],
-                "limitSymbolsToIncludedHeaders": false,
-                "databaseFilename": ""
-            }
+            "cStandard": "c17",
+            "cppStandard": "gnu++17"
         }
     ],
     "version": 4
