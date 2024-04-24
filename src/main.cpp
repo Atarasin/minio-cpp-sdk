@@ -6,14 +6,14 @@
 int main() {
 
     // 对于自己搭建的服务器，http访问配置
-    // const char* server     = "http://192.168.16.109:9000";
-    // const char* access_key = "F2IHVVX44WVGYUIA1ESX";
-    // const char* secret_key = "UiJuXEG4V6ZLqCZ9ZbD9lqKEG8WwtaKeA3kh7Lui";
+    const char* server     = "http://192.168.23.23:9000";
+    const char* access_key = "mIn975uwmsjQJfcNQhFE";
+    const char* secret_key = "jfPld48I7l8EiC9nevc6ULG9JzvOQ1x4VNRZ3p5V";
 
     // 对于官方给的测试案例地址，https访问
-    const char* server     = "https://play.min.io:9000";
-    const char* access_key = "Q3AM3UQ867SPQQA43P2F";
-    const char* secret_key = "zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG";
+    // const char* server     = "https://play.min.io:9000";
+    // const char* access_key = "Q3AM3UQ867SPQQA43P2F";
+    // const char* secret_key = "zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG";
     MinioClient minio(server, access_key, secret_key);
 
     // int time_zone_to_gmt   = -8 * 3600;
@@ -34,7 +34,7 @@ int main() {
 
     /////////////////////////////////////////////////////////////////
     INFO("===========================test upload=========================");
-    const char* local_file       = "echo.txt";
+    const char* local_file       = "../workspace/echo.txt";
     const char* bucket_name      = buckets[0].c_str();
     if(minio.upload_file(iLogger::format("/%s/echo.txt", bucket_name), local_file)){
         INFO("upload %s success, size: %d bytes", local_file, iLogger::file_size(local_file));
@@ -49,7 +49,7 @@ int main() {
 
     /////////////////////////////////////////////////////////////////
     INFO("===========================test upload data=========================");
-    auto filedata = iLogger::load_text_file("echo.txt");
+    auto filedata = iLogger::load_text_file("../workspace/echo.txt");
     if(minio.upload_filedata(iLogger::format("/%s/echo-filedata.txt", bucket_name), filedata)){
         INFO("upload filedata success, filedata.size = %d", filedata.size());
     }

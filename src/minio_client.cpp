@@ -57,11 +57,23 @@ static string hmac_encode_base64(const string& key, const void* data, size_t siz
     unsigned int len = 20;
     unsigned char result[20];
  
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+    // OpenSSL 1.1.1
     HMAC_CTX* ctx = HMAC_CTX_new();
-    HMAC_Init_ex(ctx, key.data(), key.size(), EVP_sha1(), NULL);
-    HMAC_Update(ctx, (unsigned char*)data, size);
-    HMAC_Final(ctx, result, &len);
+    HMAC_Init_ex(&ctx, key.data(), key.size(), EVP_sha1(), NULL);
+    HMAC_Update(&ctx, (unsigned char*)data, size);
+    HMAC_Final(&ctx, result, &len);
     HMAC_CTX_free(ctx);
+#else
+    // OpenSSL 1.0.2
+    HMAC_CTX ctx;
+    HMAC_CTX_init(&ctx);
+    HMAC_Init_ex(&ctx, key.data(), key.size(), EVP_sha1(), NULL);
+    HMAC_Update(&ctx, (unsigned char*)data, size);
+    HMAC_Final(&ctx, result, &len);
+    HMAC_CTX_cleanup(&ctx);
+#endif
+
     return base64_encode(result, len);
 }
 
