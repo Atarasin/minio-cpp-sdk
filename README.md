@@ -18,20 +18,8 @@ auto data = minio.get_file("/test-bucket/echo.txt");
 # 使用
 1. 配置openssl，下载并编译，例如：https://www.openssl.org/source/old/1.1.1/
 2. 配置curl，配置具有ssl支持的curl，例如：https://curl.se/download.html
-3. 修改Makefile中的openssl和curl路径，运行`make run`
 ```bash
 cd minio-cpp-sdk
-make run -j6
+mkdir build && cd build
+cmake ..
 ```
-
-# 关于我们-手写AI
-- 我们的B站：https://space.bilibili.com/1413433465/
-- 我们的博客：http://zifuture.com:8090
-
-# 参考：
-- 注意，主要分析手段，是使用minio的js-sdk看他提交http时给的参数是什么，进而估计出C++应该怎么写
-- minio的js-sdk用的签名方式不同（是AWS4-HMAC-SHA256），如果能完全模拟他，就更好了  
-1. https://github.com/minio/minio/issues/8136
-2. https://github.com/kneufeld/minio-put
-3. https://docs.min.io/docs/javascript-client-quickstart-guide.html
-4. https://github.com/minio/minio-js/blob/master/src/main/minio.js
