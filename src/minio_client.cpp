@@ -133,24 +133,55 @@ static std::vector<std::string> extract_buckets(const std::string& response) {
 
 MinioClient::MinioClient(const std::string& server,
                          const std::string& access_key,
-                         const std::string& secret_key, int correction_time)
-    : server(server), access_key(access_key), secret_key(secret_key),
-      correction_time(correction_time) {}
+                         const std::string& secret_key,
+                         const std::string& region, int correction_time)
+    : server_(server), access_key_(access_key), secret_key_(secret_key),
+      region_(region), correction_time_(correction_time) {
+    // https://192.168.1.100:9000 -> host = 192.168.1.100, port = 9000
+    std::string::size_type pos = server_.find("://");
+    if (pos == std::string::npos) {
+        throw std::runtime_error("invalid server url");
+    }
+    std::string protocol = server_.substr(0, pos);
+    if (protocol == "http") {
+        use_https_ = false;
+        port_ = 80;
+    } else if (protocol == "https") {
+        use_https_ = true;
+        port_ = 443;
+    } else {
+        throw std::runtime_error("invalid server protocol");
+    }
+
+    std::string host_port = server_.substr(pos + 3);
+    pos = host_port.find(":");
+    if (pos == std::string::npos) {
+        host_ = host_port;
+    } else {
+        host_ = host_port.substr(0, pos);
+        port_ = std::stoi(host_port.substr(pos + 1));
+    }
+
+    std::cout << "server: " << server_ << std::endl;
+    std::cout << "host: " << host_ << std::endl;
+    std::cout << "port: " << port_ << std::endl;
+}
 
 bool MinioClient::upload_file(const std::string& remote_path,
                               const std::string& file) {
     const char* content_type = "application/octet-stream";
-    auto time = gmtime_now(correction_time);
+    auto time = gmtime_now(correction_time_);
     auto signature =
-        minio_hmac_encode(secret_key, "PUT", content_type, time, remote_path);
+        minio_hmac_encode(secret_key_, "PUT", content_type, time, remote_path);
 
     auto http =
-        newHttp(iLogger::format("%s%s", server.c_str(), remote_path.c_str()));
+        newHttp(iLogger::format("%s%s", server_.c_str(), remote_path.c_str()));
     bool success =
         http->add_header(iLogger::format("Date: %s", time.c_str()))
             ->add_header(iLogger::format("Content-Type: %s", content_type))
             ->add_header(iLogger::format("Authorization: AWS %s:%s",
-                                         access_key.c_str(), signature.c_str()))
+                                         access_key_.c_str(),
+                                         signature.c_str()))
             ->put_file(file);
 
     if (!success) {
@@ -168,17 +199,18 @@ bool MinioClient::upload_filedata(const std::string& remote_path,
 bool MinioClient::upload_filedata(const std::string& remote_path,
                                   const void* file_data, size_t data_size) {
     const char* content_type = "application/octet-stream";
-    auto time = gmtime_now(correction_time);
+    auto time = gmtime_now(correction_time_);
     auto signature =
-        minio_hmac_encode(secret_key, "PUT", content_type, time, remote_path);
+        minio_hmac_encode(secret_key_, "PUT", content_type, time, remote_path);
 
     auto http =
-        newHttp(iLogger::format("%s%s", server.c_str(), remote_path.c_str()));
+        newHttp(iLogger::format("%s%s", server_.c_str(), remote_path.c_str()));
     bool success =
         http->add_header(iLogger::format("Date: %s", time.c_str()))
             ->add_header(iLogger::format("Content-Type: %s", content_type))
             ->add_header(iLogger::format("Authorization: AWS %s:%s",
-                                         access_key.c_str(), signature.c_str()))
+                                         access_key_.c_str(),
+                                         signature.c_str()))
             ->put_body(HttpBodyData(file_data, data_size));
 
     if (!success) {
@@ -193,16 +225,17 @@ bool MinioClient::make_bucket(const std::string& name) {
     std::string path = "/" + name;
     const char* content_type = "text/plane";
 
-    auto time = gmtime_now(correction_time);
+    auto time = gmtime_now(correction_time_);
     auto signature =
-        minio_hmac_encode(secret_key, "PUT", content_type, time, path);
+        minio_hmac_encode(secret_key_, "PUT", content_type, time, path);
 
-    auto http = newHttp(iLogger::format("%s%s", server.c_str(), path.c_str()));
+    auto http = newHttp(iLogger::format("%s%s", server_.c_str(), path.c_str()));
     bool success =
         http->add_header(iLogger::format("Date: %s", time.c_str()))
             ->add_header(iLogger::format("Content-Type: %s", content_type))
             ->add_header(iLogger::format("Authorization: AWS %s:%s",
-                                         access_key.c_str(), signature.c_str()))
+                                         access_key_.c_str(),
+                                         signature.c_str()))
             ->put();
 
     if (!success) {
@@ -216,16 +249,17 @@ std::vector<std::string> MinioClient::get_bucket_list(bool* pointer_success) {
     const char* path = "/";
     const char* content_type = "text/plane";
 
-    auto time = gmtime_now(correction_time);
+    auto time = gmtime_now(correction_time_);
     auto signature =
-        minio_hmac_encode(secret_key, "GET", content_type, time, path);
+        minio_hmac_encode(secret_key_, "GET", content_type, time, path);
 
-    auto http = newHttp(iLogger::format("%s%s", server.c_str(), path));
+    auto http = newHttp(iLogger::format("%s%s", server_.c_str(), path));
     bool success =
         http->add_header(iLogger::format("Date: %s", time.c_str()))
             ->add_header(iLogger::format("Content-Type: %s", content_type))
             ->add_header(iLogger::format("Authorization: AWS %s:%s",
-                                         access_key.c_str(), signature.c_str()))
+                                         access_key_.c_str(),
+                                         signature.c_str()))
             ->get();
 
     if (pointer_success)
@@ -242,17 +276,18 @@ std::vector<std::string> MinioClient::get_bucket_list(bool* pointer_success) {
 std::string MinioClient::get_file(const std::string& remote_path,
                                   bool* pointer_success) {
     const char* content_type = "application/octet-stream";
-    auto time = gmtime_now(correction_time);
+    auto time = gmtime_now(correction_time_);
     auto signature =
-        minio_hmac_encode(secret_key, "GET", content_type, time, remote_path);
+        minio_hmac_encode(secret_key_, "GET", content_type, time, remote_path);
 
     auto http =
-        newHttp(iLogger::format("%s%s", server.c_str(), remote_path.c_str()));
+        newHttp(iLogger::format("%s%s", server_.c_str(), remote_path.c_str()));
     bool success =
         http->add_header(iLogger::format("Date: %s", time.c_str()))
             ->add_header(iLogger::format("Content-Type: %s", content_type))
             ->add_header(iLogger::format("Authorization: AWS %s:%s",
-                                         access_key.c_str(), signature.c_str()))
+                                         access_key_.c_str(),
+                                         signature.c_str()))
             ->get();
 
     if (pointer_success)
@@ -276,11 +311,11 @@ std::string MinioClient::get_file_preview_url(const std::string& bucket_name,
     std::string url =
         iLogger::format("/%s/%s", bucket_name.c_str(), object_name.c_str());
 
-    minio_ns3::signer::PresignV4("GET", "47.113.144.76", 9000, url,
-                                 "cn-north-1", query_params, access_key,
-                                 secret_key, date, expires_in_seconds);
+    minio_ns3::signer::PresignV4("GET", host_, port_, url, region_,
+                                 query_params, access_key_, secret_key_, date,
+                                 expires_in_seconds);
 
-    return server + url + "?" + query_params.ToQueryString();
+    return server_ + url + "?" + query_params.ToQueryString();
 }
 
 std::string MinioClient::get_file_upload_url(
@@ -306,7 +341,7 @@ std::string MinioClient::get_file_upload_url(
 
     utils::Time date = utils::Time::Now();
     std::string credential =
-        signer::GetCredentialString(access_key, date, "cn-north-1");
+        signer::GetCredentialString(access_key_, date, region_);
     std::string amz_date = date.ToAmzDate();
     condition.push_back({"eq", "$x-amz-algorithm", "AWS4-HMAC-SHA256"});
     condition.push_back({"eq", "$x-amz-credential", credential});
@@ -316,7 +351,7 @@ std::string MinioClient::get_file_upload_url(
 
     std::string encoded_policy = utils::Base64Encode(policy.dump());
     std::string signature =
-        signer::PostPresignV4(encoded_policy, secret_key, date, "cn-north-1");
+        signer::PostPresignV4(encoded_policy, secret_key_, date, region_);
 
     nlohmann::json form_data;
     form_data["x-amz-algorithm"] = "AWS4-HMAC-SHA256";
@@ -325,7 +360,8 @@ std::string MinioClient::get_file_upload_url(
     form_data["policy"] = encoded_policy;
     form_data["x-amz-signature"] = signature;
 
-    data["url"] = iLogger::format("%s/%s", server.c_str(), bucket_name.c_str());
+    data["url"] =
+        iLogger::format("%s/%s", server_.c_str(), bucket_name.c_str());
     data["form_data"] = form_data;
 
     return data.dump();

@@ -8,7 +8,7 @@ using namespace minio_ns3;
 int main() {
 
     // 对于自己搭建的服务器，http访问配置
-    const char* server = "http://47.113.144.76:9000";
+    const char* server = "http://192.168.1.100:9000";
     const char* access_key = "vvx10M5LT5IJQBwI8Xg4";
     const char* secret_key = "79owWGirGT6sSC5molHDpgzdLoHwWpFiTQhcOuDJ";
 

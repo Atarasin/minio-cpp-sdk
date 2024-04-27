@@ -41,8 +41,11 @@ public:
      * @param secret_key
      * 指定加密的key，例如：UiJuXEG4V6ZLqCZ9ZbD9lqKEG8WwtaKeA3kh7Lui
      */
-    MinioClient(const std::string& server, const std::string& access_key,
-                const std::string& secret_key, int correction_time = 0);
+    explicit MinioClient(const std::string& server,
+                         const std::string& access_key,
+                         const std::string& secret_key,
+                         const std::string& region = "cn-north-1",
+                         int correction_time = 0);
 
     /**
      * @brief 上传文件到minio服务器-通过文件路径
@@ -135,10 +138,14 @@ public:
                                     bool* pointer_success = nullptr);
 
 private:
-    std::string server;
-    std::string access_key;
-    std::string secret_key;
-    int correction_time = 0;
+    std::string server_;
+    std::string host_;
+    int port_;
+    bool use_https_;
+    std::string access_key_;
+    std::string secret_key_;
+    std::string region_;
+    int correction_time_;
 };
 
 } // namespace minio_ns3
