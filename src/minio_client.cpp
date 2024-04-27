@@ -318,11 +318,11 @@ std::string MinioClient::get_file_preview_url(const std::string& bucket_name,
     return server_ + url + "?" + query_params.ToQueryString();
 }
 
-std::string MinioClient::get_file_upload_url(
+std::map<std::string, std::string> MinioClient::get_file_upload_form_data(
     const std::string& bucket_name, const std::string& key,
     uint64_t expires_in_seconds, std::pair<uint64_t, uint64_t> size_limit,
     bool* pointer_success) {
-    nlohmann::json data;
+    std::map<std::string, std::string> data;
 
     utils::Time expiration = utils::Time::Now();
     expiration.Add(expires_in_seconds);
@@ -353,18 +353,16 @@ std::string MinioClient::get_file_upload_url(
     std::string signature =
         signer::PostPresignV4(encoded_policy, secret_key_, date, region_);
 
-    nlohmann::json form_data;
-    form_data["x-amz-algorithm"] = "AWS4-HMAC-SHA256";
-    form_data["x-amz-credential"] = credential;
-    form_data["x-amz-date"] = amz_date;
-    form_data["policy"] = encoded_policy;
-    form_data["x-amz-signature"] = signature;
+    data["x-amz-algorithm"] = "AWS4-HMAC-SHA256";
+    data["x-amz-credential"] = credential;
+    data["x-amz-date"] = amz_date;
+    data["policy"] = encoded_policy;
+    data["x-amz-signature"] = signature;
 
     data["url"] =
         iLogger::format("%s/%s", server_.c_str(), bucket_name.c_str());
-    data["form_data"] = form_data;
 
-    return data.dump();
+    return data;
 }
 
 } // namespace minio_ns3

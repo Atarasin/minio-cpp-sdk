@@ -8,9 +8,9 @@ using namespace minio_ns3;
 int main() {
 
     // 对于自己搭建的服务器，http访问配置
-    const char* server = "http://192.168.1.100:9000";
-    const char* access_key = "vvx10M5LT5IJQBwI8Xg4";
-    const char* secret_key = "79owWGirGT6sSC5molHDpgzdLoHwWpFiTQhcOuDJ";
+    const char* server = "http://127.0.0.1:9000";
+    const char* access_key = "SkhTz7p18VULBaXSRKgz";
+    const char* secret_key = "UawPxr98WKUkW03vAl7QIe3w161bK2kxVPQ6WhyT";
 
     // 对于官方给的测试案例地址，https访问
     // const char* server     = "https://play.min.io:9000";
@@ -67,19 +67,16 @@ int main() {
 
     /////////////////////////////////////////////////////////////////
     INFO("===========================test preview=========================");
-    auto preview_url =
-        minio.get_file_preview_url(bucket_name, "2022-11-16.png", 24 * 60 * 60);
+    auto preview_url = minio.get_file_preview_url(
+        bucket_name, "user/1/test.png", 24 * 60 * 60);
     INFO("preview url is: %s", preview_url.c_str());
 
     /////////////////////////////////////////////////////////////////
     INFO("===========================test upload=========================");
     auto post_res =
-        minio.get_file_upload_url(bucket_name, "xxx.png", 24 * 60 * 60,
-                                  {1 * 1024 * 1024, 10 * 1024 * 1024});
-    INFO("post res is: %s", post_res.c_str());
-
-    nlohmann::json json_res = nlohmann::json::parse(post_res);
-    std::string upload_url = json_res["url"];
+        minio.get_file_upload_form_data(bucket_name, "xxx.png", 24 * 60 * 60,
+                                        {1 * 1024 * 1024, 10 * 1024 * 1024});
+    INFO("post url is: %s", post_res["url"].c_str());
 
     return 0;
 }

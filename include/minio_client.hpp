@@ -24,6 +24,7 @@
 #define MINIO_CLIENT_HPP
 
 #include <iostream>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -126,16 +127,30 @@ public:
     /**
      * @brief 获取文件上传地址
      *
-     * @param remote_path
-     * 指定远程路径，bucket也包含在内，例如：/test-bucket/wish/wish235.txt
-     * @return std::string
-     * 返回文件上传地址，例如：http://127.0.0.1:9000/test-bucket/wish/wish235.txt
+     * @param bucket_name
+     * 指定bucket的名字，例如：test-bucket
+     * @param key
+     * 指定文件名，例如：wish/wish235.txt
+     * @param expires_in_seconds
+     * 指定过期时间，单位秒，例如：60*60*24*30，表示30天
+     * @param size_limit
+     * 指定文件大小限制，单位字节，例如：std::make_pair(1024*1024,
+     * 1024*1024*1024)表示1M到1G
+     * @return std::map<std::string, std::string>
+     * 返回文件上传地址和表单数据，例如：
+     * {
+     *     "url": "http://127.0.0.1:9000/test-bucket/wish/wish235.txt",
+     *     "key": "wish/wish235.txt",
+     *     "x-amz-algorithm": "AWS4-HMAC-SHA256",
+     *     "x-amz-credential":
+     * "F2IHVVX44WVGYUIA1ESX/20210728/us-east-1/s3/aws4_request", "x-amz-date":
+     * "20210728T175602Z"
+     * }
      */
-    std::string get_file_upload_url(const std::string& bucket_name,
-                                    const std::string& key,
-                                    uint64_t expires_in_seconds,
-                                    std::pair<uint64_t, uint64_t> size_limit,
-                                    bool* pointer_success = nullptr);
+    std::map<std::string, std::string> get_file_upload_form_data(
+        const std::string& bucket_name, const std::string& key,
+        uint64_t expires_in_seconds, std::pair<uint64_t, uint64_t> size_limit,
+        bool* pointer_success = nullptr);
 
 private:
     std::string server_;
